@@ -79,6 +79,7 @@
   </div>
 
   <script>
+    // Schritte initialisieren
     const steps = document.querySelectorAll(".step");
     const progressBar = document.getElementById("progress");
     const stepNumber = document.getElementById("step-number");
@@ -92,28 +93,28 @@
     let currentStep = 0;
 
     function showStep(index) {
+      console.log("Aktueller Schritt:", index); // Debugging
       steps.forEach((step, i) => {
         step.classList.toggle("hidden", i !== index);
       });
 
-      // Fortschrittsanzeige aktualisieren
       progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
       stepNumber.textContent = `Schritt ${index + 1}/${steps.length}`;
 
-      // Buttons anzeigen/verstecken
       prevBtn.classList.toggle("hidden", index === 0);
       nextBtn.classList.toggle("hidden", index === steps.length - 1);
       submitBtn.classList.toggle("hidden", index !== steps.length - 1);
     }
 
-    // Priorität auswählen
+    // Priorität ändern
     prioritySelect.addEventListener("change", () => {
       const selectedPriority = prioritySelect.value;
+      console.log("Ausgewählte Priorität:", selectedPriority); // Debugging
       if (selectedPriority === "Sehr wichtig") {
         deadlineContainer.classList.remove("hidden");
       } else {
         deadlineContainer.classList.add("hidden");
-        deadlineInput.value = ""; // Deadline zurücksetzen
+        deadlineInput.value = "";
       }
     });
 
@@ -132,7 +133,7 @@
       }
     });
 
-    // Initial anzeigen
+    // Initialisierung
     showStep(currentStep);
   </script>
 </body>
