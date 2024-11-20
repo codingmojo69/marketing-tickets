@@ -105,7 +105,6 @@
     submitBtn.classList.toggle("hidden", index !== steps.length - 1);
   }
 
-  // Priorität ändern
   prioritySelect.addEventListener("change", () => {
     const selectedPriority = prioritySelect.value;
     if (selectedPriority === "Sehr wichtig") {
@@ -116,79 +115,49 @@
     }
   });
 
-  // Navigation
   nextBtn.addEventListener("click", () => {
-    // Speichere die aktuellen Eingaben
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
     inputs.forEach(input => formData[input.name] = input.value);
-
-    // Navigiere zum nächsten Schritt
-    if (currentStep < steps.length - 1) {
-      currentStep++;
-      showStep(currentStep);
-    }
+    if (currentStep < steps.length - 1) currentStep++;
+    showStep(currentStep);
   });
 
   prevBtn.addEventListener("click", () => {
-    if (currentStep > 0) {
-      currentStep--;
-      showStep(currentStep);
-    }
+    if (currentStep > 0) currentStep--;
+    showStep(currentStep);
   });
 
-  // Formular abschicken
   document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
     event.preventDefault();
-
-    // Letzte Eingaben speichern
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
     inputs.forEach(input => formData[input.name] = input.value);
-
-    const fileInput = document.getElementById("file");
-    const file = fileInput.files[0];
-
+    const file = document.getElementById("file").files[0];
     try {
-      // Schritt 1: Karte erstellen
       const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
-      if (!ticketResponse.ok) {
-        const error = await ticketResponse.json();
-        throw new Error(error.message || "Fehler beim Erstellen des Tickets");
-      }
-
+      if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets.");
       const { cardId } = await ticketResponse.json();
-
-      // Schritt 2: Datei hochladen
       if (file) {
         const fileFormData = new FormData();
         fileFormData.append("file", file);
-
-        const fileResponse = await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
+        await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
           method: "POST",
           body: fileFormData,
         });
-
-        if (!fileResponse.ok) {
-          const error = await fileResponse.json();
-          throw new Error(error.message || "Fehler beim Hochladen des Anhangs");
-        }
       }
-
       alert("Ticket erfolgreich erstellt!");
       document.getElementById("multiStepForm").reset();
-      currentStep = 0; // Zurück zum ersten Schritt
+      currentStep = 0;
       showStep(currentStep);
     } catch (error) {
-      alert(`Fehler: ${error.message}`);
       console.error(error);
+      alert("Es gab einen Fehler: " + error.message);
     }
   });
 
-  // Initialisierung
   showStep(currentStep);
 </script>
 </body>
