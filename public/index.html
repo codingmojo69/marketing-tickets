@@ -3,162 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ticket System</title>
+  <title>Ticketsystem</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <form id="ticketForm" class="animate__animated animate__fadeInDown bg-white p-6 rounded-lg shadow-md w-full max-w-md space-y-6">
-    <h1 class="text-2xl font-semibold text-center text-gray-800">
-      <i class="fas fa-ticket-alt text-blue-500"></i> Ticket erstellen
-    </h1>
-
-    <div>
-      <label for="name" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-user text-blue-500"></i> Name (Wer benötigt Hilfe)
-      </label>
-      <input type="text" id="name" name="name" required placeholder="Dein Name"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+  <div id="form-container" class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md space-y-6 animate__animated animate__fadeIn">
+    <div id="progress-bar" class="flex justify-between items-center mb-6">
+      <div class="w-full bg-gray-200 rounded-full h-2.5">
+        <div id="progress" class="bg-blue-500 h-2.5 rounded-full" style="width: 0%;"></div>
+      </div>
+      <span id="step-number" class="text-gray-500 text-sm ml-4">Schritt 1/4</span>
     </div>
 
-    <div>
-      <label for="department" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-building text-blue-500"></i> Abteilung
-      </label>
-      <input type="text" id="department" name="department" required placeholder="Z.B. IT, HR, Vertrieb"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-    </div>
+    <form id="multiStepForm" class="space-y-6">
+      <!-- Schritt 1: Name + Abteilung -->
+      <div id="step-1" class="step">
+        <h2 class="text-lg font-medium text-gray-800">
+          <i class="fas fa-user text-blue-500"></i> Wie heißt du und zu welcher Abteilung gehörst du?
+        </h2>
+        <input type="text" id="name" name="name" required placeholder="Dein Name"
+          class="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        <input type="text" id="department" name="department" required placeholder="Z.B. IT, HR, Vertrieb"
+          class="mt-4 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+      </div>
 
-    <div>
-      <label for="priority" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-exclamation-circle text-blue-500"></i> Priorität
-      </label>
-      <select id="priority" name="priority" required
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-        <option value="Wichtig">Wichtig</option>
-        <option value="Sehr wichtig">Sehr wichtig</option>
-        <option value="Zu gestern!">Zu gestern!</option>
-      </select>
-    </div>
+      <!-- Schritt 2: Priorität + Deadline -->
+      <div id="step-2" class="step hidden">
+        <h2 class="text-lg font-medium text-gray-800">
+          <i class="fas fa-exclamation-circle text-blue-500"></i> Wie wichtig ist dein Anliegen?
+        </h2>
+        <select id="priority" name="priority" required
+          class="mt-2 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-blue-500 focus:border-blue-500">
+          <option value="Wichtig">Wichtig</option>
+          <option value="Sehr wichtig">Sehr wichtig</option>
+          <option value="Zu gestern!">Zu gestern!</option>
+        </select>
+        <div id="deadline-container" class="hidden mt-4">
+          <label for="deadline" class="block text-sm font-medium text-gray-700">
+            <i class="fas fa-calendar-alt text-blue-500"></i> Deadline setzen
+          </label>
+          <input type="datetime-local" id="deadline" name="deadline"
+            class="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
 
-    <div id="deadline-container" class="hidden">
-      <label for="deadline" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-calendar-alt text-blue-500"></i> Deadline
-      </label>
-      <input type="datetime-local" id="deadline" name="deadline"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-    </div>
+      <!-- Schritt 3: Titel + Beschreibung -->
+      <div id="step-3" class="step hidden">
+        <h2 class="text-lg font-medium text-gray-800">
+          <i class="fas fa-heading text-blue-500"></i> Gib deiner Anfrage einen Titel und beschreibe sie
+        </h2>
+        <input type="text" id="title" name="title" required placeholder="Titel deiner Anfrage"
+          class="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        <textarea id="info" name="info" required placeholder="Beschreibe dein Anliegen..."
+          class="mt-4 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+      </div>
 
-    <div>
-      <label for="title" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-heading text-blue-500"></i> Titel
-      </label>
-      <input type="text" id="title" name="title" required placeholder="Ticket-Titel"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-    </div>
+      <!-- Schritt 4: Datei hochladen -->
+      <div id="step-4" class="step hidden">
+        <h2 class="text-lg font-medium text-gray-800">
+          <i class="fas fa-paperclip text-blue-500"></i> Möchtest du eine Datei hinzufügen?
+        </h2>
+        <input type="file" id="file" name="file" accept="image/*,.pdf,.doc,.docx"
+          class="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+      </div>
 
-    <div>
-      <label for="info" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-info-circle text-blue-500"></i> Details
-      </label>
-      <textarea id="info" name="info" placeholder="Beschreibe dein Anliegen..."
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
-    </div>
+      <!-- Navigation -->
+      <div class="flex justify-between">
+        <button type="button" id="prevBtn" class="hidden bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600">Zurück</button>
+        <button type="button" id="nextBtn" class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">Weiter</button>
+        <button type="submit" id="submitBtn" class="hidden bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Absenden</button>
+      </div>
+    </form>
+  </div>
 
-    <div>
-      <label for="file" class="block text-sm font-medium text-gray-700">
-        <i class="fas fa-paperclip text-blue-500"></i> Datei oder Foto anhängen
-      </label>
-      <input type="file" id="file" name="file" accept="image/*,.pdf,.doc,.docx"
-        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-    </div>
+  <script>
+    const steps = document.querySelectorAll(".step");
+    const progressBar = document.getElementById("progress");
+    const stepNumber = document.getElementById("step-number");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const prioritySelect = document.getElementById("priority");
+    const deadlineContainer = document.getElementById("deadline-container");
+    const deadlineInput = document.getElementById("deadline");
 
-    <button type="submit"
-      class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transform transition duration-200 font-medium flex items-center justify-center">
-      <i class="fas fa-paper-plane mr-2"></i> Ticket senden
-    </button>
-  </form>
+    let currentStep = 0;
 
-<script>
-  const form = document.getElementById("ticketForm");
-  const prioritySelect = document.getElementById("priority");
-  const deadlineContainer = document.getElementById("deadline-container");
-  const deadlineInput = document.getElementById("deadline");
-
-  // Feste URL für Render
-  const serverUrl = "https://marketing-tickets.onrender.com";
-
-  // Event Listener für die Prioritätsauswahl
-  prioritySelect.addEventListener("change", (event) => {
-    const selectedPriority = event.target.value;
-
-    if (selectedPriority === "Sehr wichtig") {
-      deadlineContainer.style.display = "block"; // Deadline-Feld anzeigen
-      deadlineInput.value = ""; // Sicherstellen, dass das Feld leer ist
-    } else if (selectedPriority === "Zu gestern!") {
-      deadlineContainer.style.display = "none"; // Deadline-Feld ausblenden
-      const now = new Date().toISOString().slice(0, 16); // Aktuelles Datum und Uhrzeit im Format "YYYY-MM-DDTHH:mm"
-      deadlineInput.value = now; // Automatische Deadline setzen
-    } else {
-      deadlineContainer.style.display = "none"; // Deadline-Feld ausblenden
-      deadlineInput.value = ""; // Keine Deadline
-    }
-  });
-
-  // Formular-Event Listener
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const formData = new FormData(form); // Gesamtes Formular erfassen
-    const ticketData = {
-      name: formData.get("name"),
-      department: formData.get("department"),
-      priority: formData.get("priority"),
-      deadline: formData.get("deadline") || null,
-      title: formData.get("title"),
-      info: formData.get("info"),
-    };
-
-    try {
-      // Schritt 1: Karte erstellen
-      const ticketResponse = await fetch(`${serverUrl}/create-ticket`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ticketData),
+    function showStep(index) {
+      steps.forEach((step, i) => {
+        step.classList.toggle("hidden", i !== index);
       });
 
-      if (!ticketResponse.ok) {
-        const error = await ticketResponse.json();
-        throw new Error(error.message || "Fehler beim Erstellen des Tickets");
-      }
+      // Fortschrittsanzeige aktualisieren
+      progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
+      stepNumber.textContent = `Schritt ${index + 1}/${steps.length}`;
 
-      const { cardId } = await ticketResponse.json();
-
-      // Schritt 2: Datei hochladen
-      const file = formData.get("file");
-      if (file && file.size > 0) {
-        const fileFormData = new FormData();
-        fileFormData.append("file", file);
-
-        const fileResponse = await fetch(`${serverUrl}/upload-attachment/${cardId}`, {
-          method: "POST",
-          body: fileFormData,
-        });
-
-        if (!fileResponse.ok) {
-          const error = await fileResponse.json();
-          throw new Error(error.message || "Fehler beim Hochladen des Anhangs");
-        }
-      }
-
-      alert("Ticket erfolgreich erstellt!");
-      form.reset();
-    } catch (error) {
-      alert(`Fehler: ${error.message}`);
-      console.error(error);
+      // Buttons anzeigen/verstecken
+      prevBtn.classList.toggle("hidden", index === 0);
+      nextBtn.classList.toggle("hidden", index === steps.length - 1);
+      submitBtn.classList.toggle("hidden", index !== steps.length - 1);
     }
-  });
-</script>
+
+    // Priorität auswählen
+    prioritySelect.addEventListener("change", () => {
+      const selectedPriority = prioritySelect.value;
+      if (selectedPriority === "Sehr wichtig") {
+        deadlineContainer.classList.remove("hidden");
+      } else {
+        deadlineContainer.classList.add("hidden");
+        deadlineInput.value = ""; // Deadline zurücksetzen
+      }
+    });
+
+    // Navigation
+    nextBtn.addEventListener("click", () => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        showStep(currentStep);
+      }
+    });
+
+    prevBtn.addEventListener("click", () => {
+      if (currentStep > 0) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    });
+
+    // Initial anzeigen
+    showStep(currentStep);
+  </script>
 </body>
 </html>
