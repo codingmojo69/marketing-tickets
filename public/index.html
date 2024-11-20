@@ -164,46 +164,61 @@
     if (currentStep > 0) currentStep--;
     showStep(currentStep);
   });
+multiStepForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-  multiStepForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
-    inputs.forEach(input => formData[input.name] = input.value);
-    const file = document.getElementById("file").files[0];
+  const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
+  inputs.forEach(input => formData[input.name] = input.value);
+  const file = document.getElementById("file").files[0];
 
-    try {
-      const formDataWithFile = new FormData();
-      Object.entries(formData).forEach(([key, value]) => formDataWithFile.append(key, value));
-      if (file) {
-        formDataWithFile.append("file", file);
-      }
-
-      const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
-        method: "POST",
-        body: formDataWithFile,
-      });
-
-      if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets");
-
-      const { queueCount, estimatedTime } = await fetch("https://marketing-tickets.onrender.com/get-backlog-info").then(res => res.json());
-
-      previewElements.name.textContent = formData.name;
-      previewElements.department.textContent = formData.department;
-      previewElements.priority.textContent = formData.priority;
-      previewElements.deadline.textContent = formData.deadline || "Keine";
-      previewElements.title.textContent = formData.title;
-      previewElements.info.textContent = formData.info;
-      previewElements.queueCount.textContent = queueCount;
-      previewElements.estimatedTime.textContent = `${estimatedTime} Stunden`;
-
-      multiStepForm.classList.add("hidden");
-      thankYouPage.classList.remove("hidden");
-    } catch (error) {
-      alert("Fehler: " + error.message);
+  try {
+    // FormData erstellen und Felder hinzufügen
+    const formDataWithFile = new FormData();
+    Object.entries(formData).forEach(([key, value]) => formDataWithFile.append(key, value));
+    if (file) {
+      formDataWithFile.append("file", file);
     }
-  });
 
-  showStep(currentStep);
+    // Schritt 1: Ticket erstellen
+    const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
+      method: "POST",
+      body: formDataWithFile,
+    });
+
+    if (!ticketResponse.ok) {
+      const errorResponse = await ticketResponse.json();
+      throw new Error(`Fehler beim Erstellen des Tickets: ${errorResponse.message}`);
+    }
+
+    // Schritt 2: Informationen über den Backlog abrufen
+    const backlogResponse = await fetch("https://marketing-tickets.onrender.com/get-backlog-info");
+    if (!backlogResponse.ok) {
+      const errorResponse = await backlogResponse.json();
+      throw new Error(`Fehler beim Abrufen der Backlog-Daten: ${errorResponse.message}`);
+    }
+
+    const { queueCount, estimatedTime } = await backlogResponse.json();
+
+    // Erfolgsseite anzeigen
+    previewElements.name.textContent = formData.name;
+    previewElements.department.textContent = formData.department;
+    previewElements.priority.textContent = formData.priority;
+    previewElements.deadline.textContent = formData.deadline || "Keine";
+    previewElements.title.textContent = formData.title;
+    previewElements.info.textContent = formData.info;
+    previewElements.queueCount.textContent = queueCount;
+    previewElements.estimatedTime.textContent = `${estimatedTime} Stunden`;
+
+    multiStepForm.classList.add("hidden");
+    thankYouPage.classList.remove("hidden");
+  } catch (error) {
+    console.error("Fehler:", error);
+    alert("Fehler: " + error.message);
+
+    // Zeige den aktuellen Schritt erneut an, falls ein Fehler auftritt
+    showStep(currentStep);
+  }
+});
 </script>
 </body>
 </html>
