@@ -5,6 +5,7 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const upload = multer();
+const FormData = require("form-data");
 require("dotenv").config();
 
 const app = express();
@@ -42,6 +43,8 @@ app.post("/create-ticket", async (req, res) => {
 
   try {
     const labelId = labelMap[priority];
+
+    // API-Aufruf zur Erstellung der Karte
     const response = await axios.post(
       `https://api.trello.com/1/cards`,
       {
@@ -57,7 +60,37 @@ app.post("/create-ticket", async (req, res) => {
 
     const cardId = response.data.id;
 
-    res.status(200).json({ message: "Ticket erfolgreich erstellt!", cardId });
+    // Anzahl der Tickets im Backlog berechnen
+    const backlogResponse = await axios.get(
+      `https://api.trello.com/1/lists/${TRELLO_LIST_ID}/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`
+    );
+
+    const backlog = backlogResponse.data;
+    const queueCount = backlog.length;
+
+    // Wartezeit basierend auf Prioritäten berechnen
+    const priorityDurations = {
+      "Wichtig": 8,
+      "Sehr wichtig": 4,
+      "Zu gestern!": 2,
+    };
+
+    let estimatedTime = 0;
+    backlog.forEach((card) => {
+      const cardPriority = Object.keys(labelMap).find(
+        (key) => labelMap[key] === card.idLabels[0]
+      );
+      if (cardPriority) {
+        estimatedTime += priorityDurations[cardPriority];
+      }
+    });
+
+    res.status(200).json({
+      message: "Ticket erfolgreich erstellt!",
+      cardId,
+      queueCount,
+      estimatedTime,
+    });
   } catch (error) {
     console.error("Fehler beim Erstellen der Karte:", error.response?.data || error.message);
     res.status(500).json({ message: "Fehler beim Erstellen der Karte." });
@@ -73,17 +106,17 @@ app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) =
   }
 
   try {
-    const formData = new FormData();
-    formData.append("file", req.file.buffer, req.file.originalname);
-    formData.append("key", TRELLO_KEY);
-    formData.append("token", TRELLO_TOKEN);
+    const form = new FormData();
+    form.append("file", req.file.buffer, req.file.originalname); // Datei an FormData anhängen
+    form.append("key", TRELLO_KEY);
+    form.append("token", TRELLO_TOKEN);
 
     const response = await axios.post(
       `https://api.trello.com/1/cards/${cardId}/attachments`,
-      formData,
+      form,
       {
         headers: {
-          ...formData.getHeaders(),
+          ...form.getHeaders(), // Multipart-Header setzen
         },
       }
     );
@@ -92,42 +125,6 @@ app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) =
   } catch (error) {
     console.error("Fehler beim Hochladen des Anhangs:", error.response?.data || error.message);
     res.status(500).json({ message: "Fehler beim Hochladen des Anhangs." });
-  }
-});
-
-// Route: Backlog-Informationen abrufen
-app.get("/get-backlog-info", async (req, res) => {
-  try {
-    const response = await axios.get(
-      `https://api.trello.com/1/lists/${TRELLO_LIST_ID}/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`
-    );
-
-    const cards = response.data;
-
-    // Zeitbedarf basierend auf Priorität
-    const priorityTimes = {
-      "Wichtig": 8,
-      "Sehr wichtig": 4,
-      "Zu gestern!": 2,
-    };
-
-    let totalTime = 0;
-
-    cards.forEach(card => {
-      const priorityLabel = card.labels.find(label => Object.values(labelMap).includes(label.id));
-      if (priorityLabel) {
-        const priority = Object.keys(labelMap).find(key => labelMap[key] === priorityLabel.id);
-        totalTime += priorityTimes[priority] || 0;
-      }
-    });
-
-    res.status(200).json({
-      queueCount: cards.length,
-      estimatedTime: totalTime,
-    });
-  } catch (error) {
-    console.error("Fehler beim Abrufen der Backlog-Informationen:", error.response?.data || error.message);
-    res.status(500).json({ message: "Fehler beim Abrufen der Backlog-Informationen." });
   }
 });
 
