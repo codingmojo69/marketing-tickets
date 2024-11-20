@@ -17,6 +17,7 @@
       <span id="step-number" class="text-gray-500 text-sm ml-4">Schritt 1/4</span>
     </div>
 
+    <!-- Formular -->
     <form id="multiStepForm" class="space-y-6">
       <!-- Schritt 1: Name + Abteilung -->
       <div id="step-1" class="step">
@@ -76,6 +77,20 @@
         <button type="submit" id="submitBtn" class="hidden bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Absenden</button>
       </div>
     </form>
+
+    <!-- Danke-Seite -->
+    <div id="thankYouPage" class="hidden">
+      <h2 class="text-2xl font-bold text-green-600 text-center">Vielen Dank!</h2>
+      <p class="text-center text-gray-700 mt-4">Ihr Ticket wurde erfolgreich eingereicht.</p>
+      <div id="ticketPreview" class="mt-6 bg-gray-100 p-4 rounded-md shadow-sm">
+        <h3 class="text-lg font-medium text-gray-800">Ticket Vorschau:</h3>
+        <p><strong>Name:</strong> <span id="previewName"></span></p>
+        <p><strong>Abteilung:</strong> <span id="previewDepartment"></span></p>
+        <p><strong>Priorität:</strong> <span id="previewPriority"></span></p>
+        <p><strong>Titel:</strong> <span id="previewTitle"></span></p>
+        <p><strong>Details:</strong> <span id="previewInfo"></span></p>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -85,9 +100,9 @@
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const submitBtn = document.getElementById("submitBtn");
-  const prioritySelect = document.getElementById("priority");
-  const deadlineContainer = document.getElementById("deadline-container");
-  const deadlineInput = document.getElementById("deadline");
+  const thankYouPage = document.getElementById("thankYouPage");
+  const multiStepForm = document.getElementById("multiStepForm");
+  const ticketPreview = document.getElementById("ticketPreview");
 
   let currentStep = 0;
   const formData = {};
@@ -105,16 +120,6 @@
     submitBtn.classList.toggle("hidden", index !== steps.length - 1);
   }
 
-  prioritySelect.addEventListener("change", () => {
-    const selectedPriority = prioritySelect.value;
-    if (selectedPriority === "Sehr wichtig") {
-      deadlineContainer.classList.remove("hidden");
-    } else {
-      deadlineContainer.classList.add("hidden");
-      deadlineInput.value = "";
-    }
-  });
-
   nextBtn.addEventListener("click", () => {
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
     inputs.forEach(input => formData[input.name] = input.value);
@@ -127,34 +132,42 @@
     showStep(currentStep);
   });
 
-  document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
+  multiStepForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
     inputs.forEach(input => formData[input.name] = input.value);
     const file = document.getElementById("file").files[0];
+
     try {
       const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets.");
+      if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets");
       const { cardId } = await ticketResponse.json();
+
       if (file) {
-        const fileFormData = new FormData();
-        fileFormData.append("file", file);
+        const formDataFile = new FormData();
+        formDataFile.append("file", file);
         await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
           method: "POST",
-          body: fileFormData,
+          body: formDataFile,
         });
       }
-      alert("Ticket erfolgreich erstellt!");
-      document.getElementById("multiStepForm").reset();
-      currentStep = 0;
-      showStep(currentStep);
+
+      // Ticketvorschau anzeigen
+      document.getElementById("previewName").textContent = formData.name;
+      document.getElementById("previewDepartment").textContent = formData.department;
+      document.getElementById("previewPriority").textContent = formData.priority;
+      document.getElementById("previewTitle").textContent = formData.title;
+      document.getElementById("previewInfo").textContent = formData.info;
+
+      // Danke-Seite anzeigen
+      multiStepForm.classList.add("hidden");
+      thankYouPage.classList.remove("hidden");
     } catch (error) {
-      console.error(error);
-      alert("Es gab einen Fehler: " + error.message);
+      alert("Fehler: " + error.message);
     }
   });
 
