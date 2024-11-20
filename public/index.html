@@ -90,7 +90,7 @@
     const deadlineInput = document.getElementById("deadline");
 
     let currentStep = 0;
-    const formData = {};
+    const formData = new FormData(document.getElementById("multiStepForm"));
 
     function showStep(index) {
       steps.forEach((step, i) => {
@@ -118,11 +118,6 @@
 
     // Navigation
     nextBtn.addEventListener("click", () => {
-      // Aktuelle Eingaben speichern
-      const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
-      inputs.forEach(input => formData[input.name] = input.value);
-
-      // Weiter navigieren
       if (currentStep < steps.length - 1) {
         currentStep++;
         showStep(currentStep);
@@ -140,19 +135,23 @@
     document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      // Daten sammeln
-      const fileInput = document.getElementById("file");
-      const file = fileInput.files[0];
-      const ticketData = { ...formData };
+      try {
+        // Schritt 1: Karte erstellen
+        const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
+          method: "POST",
+          body: formData,
+        });
 
-      // Datei verarbeiten
-      if (file) {
-        ticketData.file = file;
+        if (!ticketResponse.ok) {
+          const error = await ticketResponse.json();
+          throw new Error(error.message || "Fehler beim Erstellen des Tickets");
+        }
+
+        alert("Ticket wurde erfolgreich übermittelt!");
+      } catch (error) {
+        alert(`Fehler: ${error.message}`);
+        console.error(error);
       }
-
-      console.log("Gesendete Daten:", ticketData);
-
-      alert("Ticket wurde erfolgreich übermittelt!");
     });
 
     // Initialisierung
