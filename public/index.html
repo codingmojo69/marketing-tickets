@@ -78,84 +78,118 @@
     </form>
   </div>
 
-  <script>
-    const steps = document.querySelectorAll(".step");
-    const progressBar = document.getElementById("progress");
-    const stepNumber = document.getElementById("step-number");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const submitBtn = document.getElementById("submitBtn");
-    const prioritySelect = document.getElementById("priority");
-    const deadlineContainer = document.getElementById("deadline-container");
-    const deadlineInput = document.getElementById("deadline");
+<script>
+  const steps = document.querySelectorAll(".step");
+  const progressBar = document.getElementById("progress");
+  const stepNumber = document.getElementById("step-number");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const prioritySelect = document.getElementById("priority");
+  const deadlineContainer = document.getElementById("deadline-container");
+  const deadlineInput = document.getElementById("deadline");
 
-    let currentStep = 0;
-    const formData = new FormData(document.getElementById("multiStepForm"));
+  let currentStep = 0;
+  const formData = {};
 
-    function showStep(index) {
-      steps.forEach((step, i) => {
-        step.classList.toggle("hidden", i !== index);
+  function showStep(index) {
+    steps.forEach((step, i) => {
+      step.classList.toggle("hidden", i !== index);
+    });
+
+    progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
+    stepNumber.textContent = `Schritt ${index + 1}/${steps.length}`;
+
+    prevBtn.classList.toggle("hidden", index === 0);
+    nextBtn.classList.toggle("hidden", index === steps.length - 1);
+    submitBtn.classList.toggle("hidden", index !== steps.length - 1);
+  }
+
+  // Priorität ändern
+  prioritySelect.addEventListener("change", () => {
+    const selectedPriority = prioritySelect.value;
+    if (selectedPriority === "Sehr wichtig") {
+      deadlineContainer.classList.remove("hidden");
+    } else {
+      deadlineContainer.classList.add("hidden");
+      deadlineInput.value = "";
+    }
+  });
+
+  // Navigation
+  nextBtn.addEventListener("click", () => {
+    // Speichere die aktuellen Eingaben
+    const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
+    inputs.forEach(input => formData[input.name] = input.value);
+
+    // Navigiere zum nächsten Schritt
+    if (currentStep < steps.length - 1) {
+      currentStep++;
+      showStep(currentStep);
+    }
+  });
+
+  prevBtn.addEventListener("click", () => {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
+    }
+  });
+
+  // Formular abschicken
+  document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    // Letzte Eingaben speichern
+    const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
+    inputs.forEach(input => formData[input.name] = input.value);
+
+    const fileInput = document.getElementById("file");
+    const file = fileInput.files[0];
+
+    try {
+      // Schritt 1: Karte erstellen
+      const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
       });
 
-      progressBar.style.width = `${(index / (steps.length - 1)) * 100}%`;
-      stepNumber.textContent = `Schritt ${index + 1}/${steps.length}`;
-
-      prevBtn.classList.toggle("hidden", index === 0);
-      nextBtn.classList.toggle("hidden", index === steps.length - 1);
-      submitBtn.classList.toggle("hidden", index !== steps.length - 1);
-    }
-
-    // Priorität ändern
-    prioritySelect.addEventListener("change", () => {
-      const selectedPriority = prioritySelect.value;
-      if (selectedPriority === "Sehr wichtig") {
-        deadlineContainer.classList.remove("hidden");
-      } else {
-        deadlineContainer.classList.add("hidden");
-        deadlineInput.value = "";
+      if (!ticketResponse.ok) {
+        const error = await ticketResponse.json();
+        throw new Error(error.message || "Fehler beim Erstellen des Tickets");
       }
-    });
 
-    // Navigation
-    nextBtn.addEventListener("click", () => {
-      if (currentStep < steps.length - 1) {
-        currentStep++;
-        showStep(currentStep);
-      }
-    });
+      const { cardId } = await ticketResponse.json();
 
-    prevBtn.addEventListener("click", () => {
-      if (currentStep > 0) {
-        currentStep--;
-        showStep(currentStep);
-      }
-    });
+      // Schritt 2: Datei hochladen
+      if (file) {
+        const fileFormData = new FormData();
+        fileFormData.append("file", file);
 
-    // Formular abschicken
-    document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      try {
-        // Schritt 1: Karte erstellen
-        const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
+        const fileResponse = await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
           method: "POST",
-          body: formData,
+          body: fileFormData,
         });
 
-        if (!ticketResponse.ok) {
-          const error = await ticketResponse.json();
-          throw new Error(error.message || "Fehler beim Erstellen des Tickets");
+        if (!fileResponse.ok) {
+          const error = await fileResponse.json();
+          throw new Error(error.message || "Fehler beim Hochladen des Anhangs");
         }
-
-        alert("Ticket wurde erfolgreich übermittelt!");
-      } catch (error) {
-        alert(`Fehler: ${error.message}`);
-        console.error(error);
       }
-    });
 
-    // Initialisierung
-    showStep(currentStep);
-  </script>
+      alert("Ticket erfolgreich erstellt!");
+      document.getElementById("multiStepForm").reset();
+      currentStep = 0; // Zurück zum ersten Schritt
+      showStep(currentStep);
+    } catch (error) {
+      alert(`Fehler: ${error.message}`);
+      console.error(error);
+    }
+  });
+
+  // Initialisierung
+  showStep(currentStep);
+</script>
 </body>
 </html>
