@@ -5,7 +5,6 @@ const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const upload = multer();
-const FormData = require("form-data");
 require("dotenv").config();
 
 const app = express();
@@ -43,8 +42,6 @@ app.post("/create-ticket", async (req, res) => {
 
   try {
     const labelId = labelMap[priority];
-
-    // API-Aufruf zur Erstellung der Karte
     const response = await axios.post(
       `https://api.trello.com/1/cards`,
       {
@@ -59,38 +56,7 @@ app.post("/create-ticket", async (req, res) => {
     );
 
     const cardId = response.data.id;
-
-    // Anzahl der Tickets im Backlog berechnen
-    const backlogResponse = await axios.get(
-      `https://api.trello.com/1/lists/${TRELLO_LIST_ID}/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`
-    );
-
-    const backlog = backlogResponse.data;
-    const queueCount = backlog.length;
-
-    // Wartezeit basierend auf Prioritäten berechnen
-    const priorityDurations = {
-      "Wichtig": 8,
-      "Sehr wichtig": 4,
-      "Zu gestern!": 2,
-    };
-
-    let estimatedTime = 0;
-    backlog.forEach((card) => {
-      const cardPriority = Object.keys(labelMap).find(
-        (key) => labelMap[key] === card.idLabels[0]
-      );
-      if (cardPriority) {
-        estimatedTime += priorityDurations[cardPriority];
-      }
-    });
-
-    res.status(200).json({
-      message: "Ticket erfolgreich erstellt!",
-      cardId,
-      queueCount,
-      estimatedTime,
-    });
+    res.status(200).json({ message: "Ticket erfolgreich erstellt!", cardId });
   } catch (error) {
     console.error("Fehler beim Erstellen der Karte:", error.response?.data || error.message);
     res.status(500).json({ message: "Fehler beim Erstellen der Karte." });
@@ -98,6 +64,8 @@ app.post("/create-ticket", async (req, res) => {
 });
 
 // Route: Datei-Upload
+const FormData = require("form-data");
+
 app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) => {
   const { cardId } = req.params;
 

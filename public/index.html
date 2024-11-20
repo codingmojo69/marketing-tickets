@@ -17,7 +17,6 @@
       <span id="step-number" class="text-gray-500 text-sm ml-4">Schritt 1/4</span>
     </div>
 
-    <!-- Formular -->
     <form id="multiStepForm" class="space-y-6">
       <!-- Schritt 1: Name + Abteilung -->
       <div id="step-1" class="step">
@@ -77,25 +76,6 @@
         <button type="submit" id="submitBtn" class="hidden bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600">Absenden</button>
       </div>
     </form>
-
-    <!-- Danke-Seite -->
-    <div id="thankYouPage" class="hidden">
-      <h2 class="text-2xl font-bold text-green-600 text-center">Vielen Dank!</h2>
-      <p class="text-center text-gray-700 mt-4">Ihr Ticket wurde erfolgreich eingereicht.</p>
-      <div id="ticketPreview" class="mt-6 bg-gray-100 p-4 rounded-md shadow-sm">
-        <h3 class="text-lg font-medium text-gray-800">Ticket Vorschau:</h3>
-        <p><strong>Name:</strong> <span id="previewName"></span></p>
-        <p><strong>Abteilung:</strong> <span id="previewDepartment"></span></p>
-        <p><strong>Priorität:</strong> <span id="previewPriority"></span></p>
-        <p><strong>Deadline:</strong> <span id="previewDeadline"></span></p>
-        <p><strong>Titel:</strong> <span id="previewTitle"></span></p>
-        <p><strong>Details:</strong> <span id="previewInfo"></span></p>
-        <div id="queueInfo" class="mt-4 text-gray-700">
-          <p><strong>Tickets vor Ihnen:</strong> <span id="queueCount"></span></p>
-          <p><strong>Geschätzte Wartezeit:</strong> <span id="estimatedTime"></span></p>
-        </div>
-      </div>
-    </div>
   </div>
 
 <script>
@@ -105,22 +85,9 @@
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const submitBtn = document.getElementById("submitBtn");
-  const thankYouPage = document.getElementById("thankYouPage");
-  const multiStepForm = document.getElementById("multiStepForm");
   const prioritySelect = document.getElementById("priority");
   const deadlineContainer = document.getElementById("deadline-container");
   const deadlineInput = document.getElementById("deadline");
-
-  const previewElements = {
-    name: document.getElementById("previewName"),
-    department: document.getElementById("previewDepartment"),
-    priority: document.getElementById("previewPriority"),
-    deadline: document.getElementById("previewDeadline"),
-    title: document.getElementById("previewTitle"),
-    info: document.getElementById("previewInfo"),
-    queueCount: document.getElementById("queueCount"),
-    estimatedTime: document.getElementById("estimatedTime"),
-  };
 
   let currentStep = 0;
   const formData = {};
@@ -140,16 +107,17 @@
 
   prioritySelect.addEventListener("change", () => {
     const selectedPriority = prioritySelect.value;
+
     if (selectedPriority === "Sehr wichtig") {
       deadlineContainer.classList.remove("hidden");
-      deadlineInput.value = "";
+      deadlineInput.value = ""; // Manuelles Datum zulassen
     } else if (selectedPriority === "Zu gestern!") {
       deadlineContainer.classList.add("hidden");
-      const now = new Date().toISOString().slice(0, 16);
-      deadlineInput.value = now;
+      const now = new Date().toISOString().slice(0, 16); // Aktueller Zeitstempel
+      deadlineInput.value = now; // Automatische Deadline
     } else {
       deadlineContainer.classList.add("hidden");
-      deadlineInput.value = "";
+      deadlineInput.value = ""; // Keine Deadline
     }
   });
 
@@ -164,61 +132,39 @@
     if (currentStep > 0) currentStep--;
     showStep(currentStep);
   });
-multiStepForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
 
-  const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
-  inputs.forEach(input => formData[input.name] = input.value);
-  const file = document.getElementById("file").files[0];
-
-  try {
-    // FormData erstellen und Felder hinzufügen
-    const formDataWithFile = new FormData();
-    Object.entries(formData).forEach(([key, value]) => formDataWithFile.append(key, value));
-    if (file) {
-      formDataWithFile.append("file", file);
+  document.getElementById("multiStepForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
+    inputs.forEach(input => formData[input.name] = input.value);
+    const file = document.getElementById("file").files[0];
+    try {
+      const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets.");
+      const { cardId } = await ticketResponse.json();
+      if (file) {
+        const fileFormData = new FormData();
+        fileFormData.append("file", file);
+        await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
+          method: "POST",
+          body: fileFormData,
+        });
+      }
+      alert("Ticket erfolgreich erstellt!");
+      document.getElementById("multiStepForm").reset();
+      currentStep = 0;
+      showStep(currentStep);
+    } catch (error) {
+      console.error(error);
+      alert("Es gab einen Fehler: " + error.message);
     }
+  });
 
-    // Schritt 1: Ticket erstellen
-    const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
-      method: "POST",
-      body: formDataWithFile,
-    });
-
-    if (!ticketResponse.ok) {
-      const errorResponse = await ticketResponse.json();
-      throw new Error(`Fehler beim Erstellen des Tickets: ${errorResponse.message}`);
-    }
-
-    // Schritt 2: Informationen über den Backlog abrufen
-    const backlogResponse = await fetch("https://marketing-tickets.onrender.com/get-backlog-info");
-    if (!backlogResponse.ok) {
-      const errorResponse = await backlogResponse.json();
-      throw new Error(`Fehler beim Abrufen der Backlog-Daten: ${errorResponse.message}`);
-    }
-
-    const { queueCount, estimatedTime } = await backlogResponse.json();
-
-    // Erfolgsseite anzeigen
-    previewElements.name.textContent = formData.name;
-    previewElements.department.textContent = formData.department;
-    previewElements.priority.textContent = formData.priority;
-    previewElements.deadline.textContent = formData.deadline || "Keine";
-    previewElements.title.textContent = formData.title;
-    previewElements.info.textContent = formData.info;
-    previewElements.queueCount.textContent = queueCount;
-    previewElements.estimatedTime.textContent = `${estimatedTime} Stunden`;
-
-    multiStepForm.classList.add("hidden");
-    thankYouPage.classList.remove("hidden");
-  } catch (error) {
-    console.error("Fehler:", error);
-    alert("Fehler: " + error.message);
-
-    // Zeige den aktuellen Schritt erneut an, falls ein Fehler auftritt
-    showStep(currentStep);
-  }
-});
+  showStep(currentStep);
 </script>
 </body>
 </html>
