@@ -90,6 +90,10 @@
         <p><strong>Deadline:</strong> <span id="previewDeadline"></span></p>
         <p><strong>Titel:</strong> <span id="previewTitle"></span></p>
         <p><strong>Details:</strong> <span id="previewInfo"></span></p>
+        <div id="queueInfo" class="mt-4 text-gray-700">
+          <p><strong>Tickets vor Ihnen:</strong> <span id="queueCount"></span></p>
+          <p><strong>Geschätzte Wartezeit:</strong> <span id="estimatedTime"></span></p>
+        </div>
       </div>
     </div>
   </div>
@@ -103,10 +107,20 @@
   const submitBtn = document.getElementById("submitBtn");
   const thankYouPage = document.getElementById("thankYouPage");
   const multiStepForm = document.getElementById("multiStepForm");
-  const ticketPreview = document.getElementById("ticketPreview");
   const prioritySelect = document.getElementById("priority");
   const deadlineContainer = document.getElementById("deadline-container");
   const deadlineInput = document.getElementById("deadline");
+
+  const previewElements = {
+    name: document.getElementById("previewName"),
+    department: document.getElementById("previewDepartment"),
+    priority: document.getElementById("previewPriority"),
+    deadline: document.getElementById("previewDeadline"),
+    title: document.getElementById("previewTitle"),
+    info: document.getElementById("previewInfo"),
+    queueCount: document.getElementById("queueCount"),
+    estimatedTime: document.getElementById("estimatedTime"),
+  };
 
   let currentStep = 0;
   const formData = {};
@@ -125,19 +139,19 @@
   }
 
   prioritySelect.addEventListener("change", () => {
-  const selectedPriority = prioritySelect.value;
-  if (selectedPriority === "Sehr wichtig") {
-    deadlineContainer.classList.remove("hidden");
-    deadlineInput.value = ""; // Sicherstellen, dass das Feld leer ist
-  } else if (selectedPriority === "Zu gestern!") {
-    deadlineContainer.classList.add("hidden");
-    const now = new Date().toISOString().slice(0, 16); // Aktuelles Datum und Uhrzeit im Format "YYYY-MM-DDTHH:mm"
-    deadlineInput.value = now; // Automatische Deadline setzen
-  } else {
-    deadlineContainer.classList.add("hidden");
-    deadlineInput.value = ""; // Keine Deadline
-  }
-});
+    const selectedPriority = prioritySelect.value;
+    if (selectedPriority === "Sehr wichtig") {
+      deadlineContainer.classList.remove("hidden");
+      deadlineInput.value = "";
+    } else if (selectedPriority === "Zu gestern!") {
+      deadlineContainer.classList.add("hidden");
+      const now = new Date().toISOString().slice(0, 16);
+      deadlineInput.value = now;
+    } else {
+      deadlineContainer.classList.add("hidden");
+      deadlineInput.value = "";
+    }
+  });
 
   nextBtn.addEventListener("click", () => {
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
@@ -156,28 +170,34 @@
     const inputs = steps[currentStep].querySelectorAll("input, select, textarea");
     inputs.forEach(input => formData[input.name] = input.value);
     const file = document.getElementById("file").files[0];
+
     try {
       const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+
       if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets");
-      const { cardId } = await ticketResponse.json();
+      const { cardId, queueCount, estimatedTime } = await ticketResponse.json();
+
       if (file) {
-        const formDataFile = new FormData();
-        formDataFile.append("file", file);
+        const fileData = new FormData();
+        fileData.append("file", file);
         await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
           method: "POST",
-          body: formDataFile,
+          body: fileData,
         });
       }
-      document.getElementById("previewName").textContent = formData.name;
-      document.getElementById("previewDepartment").textContent = formData.department;
-      document.getElementById("previewPriority").textContent = formData.priority;
-      document.getElementById("previewDeadline").textContent = formData.deadline || "Keine";
-      document.getElementById("previewTitle").textContent = formData.title;
-      document.getElementById("previewInfo").textContent = formData.info;
+
+      previewElements.name.textContent = formData.name;
+      previewElements.department.textContent = formData.department;
+      previewElements.priority.textContent = formData.priority;
+      previewElements.deadline.textContent = formData.deadline || "Keine";
+      previewElements.title.textContent = formData.title;
+      previewElements.info.textContent = formData.info;
+      previewElements.queueCount.textContent = queueCount;
+      previewElements.estimatedTime.textContent = `${estimatedTime} Stunden`;
 
       multiStepForm.classList.add("hidden");
       thankYouPage.classList.remove("hidden");

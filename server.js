@@ -95,6 +95,44 @@ app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) =
     res.status(500).json({ message: "Fehler beim Hochladen des Anhangs." });
   }
 });
+// Neue Route: Backlog-Analyse
+app.get("/backlog-info", async (req, res) => {
+  try {
+    const response = await axios.get(
+      `https://api.trello.com/1/lists/${TRELLO_LIST_ID}/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`
+    );
+
+    const tickets = response.data;
+
+    let totalTime = 0;
+    const ticketCount = tickets.length;
+
+    tickets.forEach((ticket) => {
+      const priority = ticket.labels.find((label) => label.name);
+      if (priority) {
+        switch (priority.name) {
+          case "Wichtig":
+            totalTime += 8;
+            break;
+          case "Sehr wichtig":
+            totalTime += 4;
+            break;
+          case "Zu gestern!":
+            totalTime += 2;
+            break;
+        }
+      }
+    });
+
+    res.status(200).json({
+      ticketCount,
+      estimatedTime: totalTime,
+    });
+  } catch (error) {
+    console.error("Fehler beim Abrufen des Backlogs:", error.response?.data || error.message);
+    res.status(500).json({ message: "Fehler beim Abrufen des Backlogs." });
+  }
+});
 
 // Server starten
 app.listen(PORT, () => {
