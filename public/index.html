@@ -172,13 +172,19 @@
     const file = document.getElementById("file").files[0];
 
     try {
+      const formDataWithFile = new FormData();
+      Object.entries(formData).forEach(([key, value]) => formDataWithFile.append(key, value));
+      if (file) {
+        formDataWithFile.append("file", file);
+      }
+
       const ticketResponse = await fetch("https://marketing-tickets.onrender.com/create-ticket", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: formDataWithFile,
       });
 
       if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets");
+
       const { queueCount, estimatedTime } = await fetch("https://marketing-tickets.onrender.com/get-backlog-info").then(res => res.json());
 
       previewElements.name.textContent = formData.name;
