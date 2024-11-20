@@ -4,39 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ticket System</title>
-  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
 </head>
-<body>
-  <form id="ticketForm">
-    <label for="name">Name (Wer benötigt Hilfe)</label>
-    <input type="text" id="name" name="name" required placeholder="Dein Name">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <form id="ticketForm" class="animate__animated animate__fadeInDown bg-white p-6 rounded-lg shadow-md w-full max-w-md space-y-6">
+    <h1 class="text-2xl font-semibold text-center text-gray-800">
+      <i class="fas fa-ticket-alt text-blue-500"></i> Ticket erstellen
+    </h1>
 
-    <label for="department">Abteilung</label>
-    <input type="text" id="department" name="department" required placeholder="Z.B. IT, HR, Vertrieb">
-
-    <label for="priority">Priorität</label>
-    <select id="priority" name="priority" required>
-      <option value="Wichtig">Wichtig</option>
-      <option value="Sehr wichtig">Sehr wichtig</option>
-      <option value="Zu gestern!">Zu gestern!</option>
-    </select>
-
-    <!-- Deadline-Feld -->
-    <div id="deadline-container">
-      <label for="deadline">Deadline</label>
-      <input type="datetime-local" id="deadline" name="deadline">
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-user text-blue-500"></i> Name (Wer benötigt Hilfe)
+      </label>
+      <input type="text" id="name" name="name" required placeholder="Dein Name"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
     </div>
 
-    <label for="title">Titel</label>
-    <input type="text" id="title" name="title" required placeholder="Ticket-Titel">
+    <div>
+      <label for="department" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-building text-blue-500"></i> Abteilung
+      </label>
+      <input type="text" id="department" name="department" required placeholder="Z.B. IT, HR, Vertrieb"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+    </div>
 
-    <label for="info">Details</label>
-    <textarea id="info" name="info" placeholder="Beschreibe dein Anliegen..."></textarea>
+    <div>
+      <label for="priority" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-exclamation-circle text-blue-500"></i> Priorität
+      </label>
+      <select id="priority" name="priority" required
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+        <option value="Wichtig">Wichtig</option>
+        <option value="Sehr wichtig">Sehr wichtig</option>
+        <option value="Zu gestern!">Zu gestern!</option>
+      </select>
+    </div>
 
-    <label for="file">Datei oder Foto anhängen</label>
-    <input type="file" id="file" name="file" accept="image/*,.pdf,.doc,.docx">
+    <div id="deadline-container" class="hidden">
+      <label for="deadline" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-calendar-alt text-blue-500"></i> Deadline
+      </label>
+      <input type="datetime-local" id="deadline" name="deadline"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+    </div>
 
-    <button type="submit">Ticket senden</button>
+    <div>
+      <label for="title" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-heading text-blue-500"></i> Titel
+      </label>
+      <input type="text" id="title" name="title" required placeholder="Ticket-Titel"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+    </div>
+
+    <div>
+      <label for="info" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-info-circle text-blue-500"></i> Details
+      </label>
+      <textarea id="info" name="info" placeholder="Beschreibe dein Anliegen..."
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+    </div>
+
+    <div>
+      <label for="file" class="block text-sm font-medium text-gray-700">
+        <i class="fas fa-paperclip text-blue-500"></i> Datei oder Foto anhängen
+      </label>
+      <input type="file" id="file" name="file" accept="image/*,.pdf,.doc,.docx"
+        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+    </div>
+
+    <button type="submit"
+      class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transform transition duration-200 font-medium flex items-center justify-center">
+      <i class="fas fa-paper-plane mr-2"></i> Ticket senden
+    </button>
   </form>
 
 <script>
@@ -46,7 +87,7 @@
   const deadlineInput = document.getElementById("deadline");
 
   // Feste URL für Render
-    const serverUrl = "https://marketing-tickets.onrender.com";
+  const serverUrl = "https://marketing-tickets.onrender.com";
 
   // Event Listener für die Prioritätsauswahl
   prioritySelect.addEventListener("change", (event) => {
@@ -121,4 +162,3 @@
 </script>
 </body>
 </html>
-
