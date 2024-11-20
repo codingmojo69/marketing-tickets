@@ -56,6 +56,7 @@ app.post("/create-ticket", async (req, res) => {
     );
 
     const cardId = response.data.id;
+
     res.status(200).json({ message: "Ticket erfolgreich erstellt!", cardId });
   } catch (error) {
     console.error("Fehler beim Erstellen der Karte:", error.response?.data || error.message);
@@ -64,8 +65,6 @@ app.post("/create-ticket", async (req, res) => {
 });
 
 // Route: Datei-Upload
-const FormData = require("form-data");
-
 app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) => {
   const { cardId } = req.params;
 
@@ -74,17 +73,17 @@ app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) =
   }
 
   try {
-    const form = new FormData();
-    form.append("file", req.file.buffer, req.file.originalname); // Datei an FormData anhängen
-    form.append("key", TRELLO_KEY);
-    form.append("token", TRELLO_TOKEN);
+    const formData = new FormData();
+    formData.append("file", req.file.buffer, req.file.originalname);
+    formData.append("key", TRELLO_KEY);
+    formData.append("token", TRELLO_TOKEN);
 
     const response = await axios.post(
       `https://api.trello.com/1/cards/${cardId}/attachments`,
-      form,
+      formData,
       {
         headers: {
-          ...form.getHeaders(), // Multipart-Header setzen
+          ...formData.getHeaders(),
         },
       }
     );
@@ -95,42 +94,40 @@ app.post("/upload-attachment/:cardId", upload.single("file"), async (req, res) =
     res.status(500).json({ message: "Fehler beim Hochladen des Anhangs." });
   }
 });
-// Neue Route: Backlog-Analyse
-app.get("/backlog-info", async (req, res) => {
+
+// Route: Backlog-Informationen abrufen
+app.get("/get-backlog-info", async (req, res) => {
   try {
     const response = await axios.get(
       `https://api.trello.com/1/lists/${TRELLO_LIST_ID}/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`
     );
 
-    const tickets = response.data;
+    const cards = response.data;
+
+    // Zeitbedarf basierend auf Priorität
+    const priorityTimes = {
+      "Wichtig": 8,
+      "Sehr wichtig": 4,
+      "Zu gestern!": 2,
+    };
 
     let totalTime = 0;
-    const ticketCount = tickets.length;
 
-    tickets.forEach((ticket) => {
-      const priority = ticket.labels.find((label) => label.name);
-      if (priority) {
-        switch (priority.name) {
-          case "Wichtig":
-            totalTime += 8;
-            break;
-          case "Sehr wichtig":
-            totalTime += 4;
-            break;
-          case "Zu gestern!":
-            totalTime += 2;
-            break;
-        }
+    cards.forEach(card => {
+      const priorityLabel = card.labels.find(label => Object.values(labelMap).includes(label.id));
+      if (priorityLabel) {
+        const priority = Object.keys(labelMap).find(key => labelMap[key] === priorityLabel.id);
+        totalTime += priorityTimes[priority] || 0;
       }
     });
 
     res.status(200).json({
-      ticketCount,
+      queueCount: cards.length,
       estimatedTime: totalTime,
     });
   } catch (error) {
-    console.error("Fehler beim Abrufen des Backlogs:", error.response?.data || error.message);
-    res.status(500).json({ message: "Fehler beim Abrufen des Backlogs." });
+    console.error("Fehler beim Abrufen der Backlog-Informationen:", error.response?.data || error.message);
+    res.status(500).json({ message: "Fehler beim Abrufen der Backlog-Informationen." });
   }
 });
 

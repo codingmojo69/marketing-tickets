@@ -179,16 +179,7 @@
       });
 
       if (!ticketResponse.ok) throw new Error("Fehler beim Erstellen des Tickets");
-      const { cardId, queueCount, estimatedTime } = await ticketResponse.json();
-
-      if (file) {
-        const fileData = new FormData();
-        fileData.append("file", file);
-        await fetch(`https://marketing-tickets.onrender.com/upload-attachment/${cardId}`, {
-          method: "POST",
-          body: fileData,
-        });
-      }
+      const { queueCount, estimatedTime } = await fetch("https://marketing-tickets.onrender.com/get-backlog-info").then(res => res.json());
 
       previewElements.name.textContent = formData.name;
       previewElements.department.textContent = formData.department;
