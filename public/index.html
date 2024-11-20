@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <form id="ticketForm">
+    <label for="name">Name (Wer benötigt Hilfe)</label>
+    <input type="text" id="name" name="name" required placeholder="Dein Name">
+
+    <label for="department">Abteilung</label>
+    <input type="text" id="department" name="department" required placeholder="Z.B. IT, HR, Vertrieb">
+
+    <label for="priority">Priorität</label>
+    <select id="priority" name="priority" required>
+      <option value="Wichtig">Wichtig</option>
+      <option value="Sehr wichtig">Sehr wichtig</option>
+      <option value="Zu gestern!">Zu gestern!</option>
+    </select>
+
+    <!-- Deadline-Feld -->
+    <div id="deadline-container">
+      <label for="deadline">Deadline</label>
+      <input type="datetime-local" id="deadline" name="deadline">
+    </div>
+
+    <label for="title">Titel</label>
+    <input type="text" id="title" name="title" required placeholder="Ticket-Titel">
+
+    <label for="info">Details</label>
+    <textarea id="info" name="info" placeholder="Beschreibe dein Anliegen..."></textarea>
+
+    <label for="file">Datei oder Foto anhängen</label>
+    <input type="file" id="file" name="file" accept="image/*,.pdf,.doc,.docx">
+
+    <button type="submit">Ticket senden</button>
+  </form>
+
+<script>
+  const form = document.getElementById("ticketForm");
+  const prioritySelect = document.getElementById("priority");
+  const deadlineContainer = document.getElementById("deadline-container");
+  const deadlineInput = document.getElementById("deadline");
+
+  // Dynamische URL des Servers
+  const serverUrl = `${window.location.protocol}//${window.location.hostname}:3000`;
+
+  // Event Listener für die Prioritätsauswahl
+  prioritySelect.addEventListener("change", (event) => {
+    const selectedPriority = event.target.value;
+
+    if (selectedPriority === "Sehr wichtig") {
+      deadlineContainer.style.display = "block"; // Deadline-Feld anzeigen
+      deadlineInput.value = ""; // Sicherstellen, dass das Feld leer ist
+    } else if (selectedPriority === "Zu gestern!") {
+      deadlineContainer.style.display = "none"; // Deadline-Feld ausblenden
+      const now = new Date().toISOString().slice(0, 16); // Aktuelles Datum und Uhrzeit im Format "YYYY-MM-DDTHH:mm"
+      deadlineInput.value = now; // Automatische Deadline setzen
+    } else {
+      deadlineContainer.style.display = "none"; // Deadline-Feld ausblenden
+      deadlineInput.value = ""; // Keine Deadline
+    }
+  });
+
+  // Formular-Event Listener
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(form); // Gesamtes Formular erfassen
+    const ticketData = {
+      name: formData.get("name"),
+      department: formData.get("department"),
+      priority: formData.get("priority"),
+      deadline: formData.get("deadline") || null,
+      title: formData.get("title"),
+      info: formData.get("info"),
+    };
+
+    try {
+      // Schritt 1: Karte erstellen
+      const ticketResponse = await fetch(`${serverUrl}/create-ticket`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ticketData),
+      });
+
+      if (!ticketResponse.ok) {
+        const error = await ticketResponse.json();
+        throw new Error(error.message || "Fehler beim Erstellen des Tickets");
+      }
+
+      const { cardId } = await ticketResponse.json();
+
+      // Schritt 2: Datei hochladen
+      const file = formData.get("file");
+      if (file && file.size > 0) {
+        const fileFormData = new FormData();
+        fileFormData.append("file", file);
+
+        const fileResponse = await fetch(`${serverUrl}/upload-attachment/${cardId}`, {
+          method: "POST",
+          body: fileFormData,
+        });
+
+        if (!fileResponse.ok) {
+          const error = await fileResponse.json();
+          throw new Error(error.message || "Fehler beim Hochladen des Anhangs");
+        }
+      }
+
+      alert("Ticket erfolgreich erstellt!");
+      form.reset();
+    } catch (error) {
+      alert(`Fehler: ${error.message}`);
+      console.error(error);
+    }
+  });
+</script>
+</body>
+</html>
+
